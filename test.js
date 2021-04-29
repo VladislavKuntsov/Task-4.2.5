@@ -1,20 +1,20 @@
 const divContainer = document.createElement("div"); //создание контейнера
 divContainer.classList.add("container")
-document.body.appendChild(divContainer);
+document.body.append(divContainer);
 
 const inputSearch = document.createElement("input");  // создание поля ввода запроса
 inputSearch.classList.add("search");
 inputSearch.setAttribute("type", "text");
 inputSearch.setAttribute("placeholder", "Введите репозиторий");
-divContainer.appendChild(inputSearch);
+divContainer.append(inputSearch);
 
 const dropdownMenu = document.createElement("div");  // Создание выпадающего меню репозиторией
 dropdownMenu.classList.add("dropdownMenu");
-divContainer.appendChild(dropdownMenu);
+divContainer.append(dropdownMenu);
 
 const informSearch = document.createElement("div"); // Создание результатов запроса
 informSearch.classList.add("information");
-divContainer.appendChild(informSearch);
+divContainer.append(informSearch);
 
 let queryResult = new Object; // переменная, хранящая все репозитории запроса
 
@@ -34,7 +34,8 @@ onChange = debounce(onChange)
 inputSearch.addEventListener("keyup", onChange);
 
 async function onChange(event) {  // GET запрос на Githab.
-  value = event.target.value;
+  value = event.target.value.trim();
+
   if (!value == "") {
     let url = `https://api.github.com/search/repositories?q=${value}in:name&per_page=5&sort=stars`;
     let data = await fetch(url)
@@ -58,7 +59,7 @@ function createDropdownMenu(data) {  // Создание выпадающего 
     const p = document.createElement("p");
     p.classList.add("dropdownMenu_name");
     p.innerHTML = item.name[0].toUpperCase() + item.name.slice(1);
-    dropdownMenu.appendChild(p);
+    dropdownMenu.append(p);
   })
   dropdownMenu.style.display = "block";
 }
@@ -79,39 +80,40 @@ dropdownMenu.addEventListener("click", (event) => {  // Ловим клик на
 
   HidingDropdownMenu ();
 
-  addRepositories(queryResult.items.slice(0, 3));  // создание информационного блока
+  addRepositories(queryResult.items[0]);  // создание информационного блока
 
   inputSearch.value = null;
   }
 })
 
 function addRepositories(data) {   // Добавляем информацию по запросу на страницу
-  if(document.querySelectorAll(".information_request")) {
-    document.querySelectorAll(".information_request").forEach(e => e.parentNode.removeChild(e));
+  if (informSearch.childNodes.length == 3) {
+    informSearch.lastChild.remove();
   }
 
-  data.forEach((item) => {  // создание информации по запросу
+  // создание информации по запросу
+
     let divInformation = document.createElement("div");
     divInformation.classList.add("information_request");
 
     let btnClose = document.createElement("a");
     btnClose.classList.add("close");
-    divInformation.appendChild(btnClose);
+    divInformation.append(btnClose);
 
     let p1 = document.createElement("p");
-    p1.innerHTML = `Name: ${item.name}`;
-    divInformation.appendChild(p1);
+    p1.innerHTML = `Name: ${data.name}`;
+    divInformation.append(p1);
 
     let p2 = document.createElement("p");
-    p2.innerHTML = `Owner: ${item.owner.type}`;
-    divInformation.appendChild(p2); 
+    p2.innerHTML = `Owner: ${data.owner.type}`;
+    divInformation.append(p2); 
    
     let p3 = document.createElement("p");
-    p3.innerHTML = `Stars: ${item.stargazers_count}`;
-    divInformation.appendChild(p3);
+    p3.innerHTML = `Stars: ${data.stargazers_count}`;
+    divInformation.append(p3);
   
-    informSearch.appendChild(divInformation)
-  })
+    informSearch.prepend(divInformation)
+
 }
  
 informSearch.addEventListener("click", (event) => {
