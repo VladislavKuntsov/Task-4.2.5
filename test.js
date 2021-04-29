@@ -56,6 +56,7 @@ function createDropdownMenu(data) {  // Создание выпадающего 
 
   data.forEach((item)=> {
     const p = document.createElement("p");
+    p.classList.add("dropdownMenu_name");
     p.innerHTML = item.name[0].toUpperCase() + item.name.slice(1);
     dropdownMenu.appendChild(p);
   })
@@ -65,18 +66,23 @@ function createDropdownMenu(data) {  // Создание выпадающего 
 function HidingDropdownMenu () {   //Скрытие выпадающего меню
   let p = dropdownMenu.querySelectorAll("p");
     for(let item of p) {
-      item.style.display = "none"
+      item.remove();
     }
 }
 
 dropdownMenu.addEventListener("click", (event) => {  // Ловим клик на элементе выпадающего меню
   valueClick = event.target.textContent;
+
+  if(event.target.classList.contains("dropdownMenu_name")) {
+
   inputSearch.value = valueClick;
 
   HidingDropdownMenu ();
-  addRepositories(queryResult.items.slice(0, 3));  // ??? хз можно ли так делать???
+
+  addRepositories(queryResult.items.slice(0, 3));  // создание информационного блока
 
   inputSearch.value = null;
+  }
 })
 
 function addRepositories(data) {   // Добавляем информацию по запросу на страницу
