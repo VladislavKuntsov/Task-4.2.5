@@ -109,5 +109,7 @@ function addRepositories(data) {   // Добавляем информацию п
 }
  
 informSearch.addEventListener("click", (event) => {
-    event.target.parentNode.remove();
+    if(event.target.classList.contains("close")) {
+      event.target.parentNode.remove();
+    }
 })
