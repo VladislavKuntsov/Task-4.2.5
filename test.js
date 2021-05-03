@@ -1,123 +1,93 @@
-const divContainer = document.createElement("div"); //создание контейнера
-divContainer.classList.add("container")
-document.body.append(divContainer);
+function addNode(tag, className, Node, atributs, data) { //Функция добавление нового узла в html
+  let element = document.createElement(tag); 
+  element.classList.add(className);
+  Node.append(element);
 
-const inputSearch = document.createElement("input");  // создание поля ввода запроса
-inputSearch.classList.add("search");
-inputSearch.setAttribute("type", "text");
-inputSearch.setAttribute("placeholder", "Введите репозиторий");
-divContainer.append(inputSearch);
+  if(atributs) {
+    const [name, value]  = atributs;
+    element.setAttribute(name, value);
+  }
 
-const dropdownMenu = document.createElement("div");  // Создание выпадающего меню репозиторией
-dropdownMenu.classList.add("dropdownMenu");
-divContainer.append(dropdownMenu);
+  if(data) element.innerHTML = data.name[0].toUpperCase() + data.name.slice(1);
 
-const informSearch = document.createElement("div"); // Создание результатов запроса
-informSearch.classList.add("information");
-divContainer.append(informSearch);
+  return element;
+} 
 
-let queryResult = new Object; // переменная, хранящая все репозитории запроса
+function removeChildren(element, selector) {  // Функция удаления всех дочерних элементов
+  let children = element.querySelectorAll(selector)
+  for(let item of children) {
+    item.remove();
+  }
+}
 
-const debounce = (fn) => {
+function AddSearchResult(selectorName, Node, propertyValue, propertyName) { // Функция добавление результата запроса
+  let element = document.createElement(selectorName);
+  element.innerHTML = `${propertyName}: ${propertyValue}`;
+  Node.append(element);
+}
+
+let container = addNode("div", "container", document.body);
+let search = addNode("input", "search", container, ["type", "text"]);
+let dropdownMenu = addNode("div", "dropdownMenu", container);
+let informationBlock = addNode("div", "information", container);
+
+
+function createDropdownMenu(data) {  // Создание выпадающего меню
+  if(dropdownMenu.childNodes.length) removeChildren(dropdownMenu, "p");
+
+  data.forEach((item)=> addNode("p", "dropdownMenu_name", dropdownMenu, undefined, item)) // создание выпадающего меню при вводе запроса
+}
+
+const debounce = (fn) => { // Просто debaunce 
   let timeout;
 
-  return function () {
-      const fnCall = () => fn.apply(this, arguments);  //вызываем функцию и передаем аргументы
-      clearTimeout(timeout);
+  return function () { 
+    const fnCall = () => fn.apply(this, arguments);  
+    clearTimeout(timeout);
       
-      timeout = setTimeout(() => fnCall(), 500)
+    timeout = setTimeout(() => fnCall(), 500)
   }
 };
 
-onChange = debounce(onChange)
+search.addEventListener("keyup", debounce(onChange));
 
-inputSearch.addEventListener("keyup", onChange);
+let queryResult = new Object; // хранение результата запроса
 
-async function onChange(event) {  // GET запрос на Githab.
-  value = event.target.value.trim();
+async function onChange(event) {  // GET запрос
+  let value = event.target.value.trim();
 
-  if (!value == "") {
-    let url = `https://api.github.com/search/repositories?q=${value}in:name&per_page=5&sort=stars`;
-    let data = await fetch(url)
+  if (!value == '') {
+    let data = await fetch(`https://api.github.com/search/repositories?q=${value}in:name&per_page=5&sort=stars`);
     queryResult = await data.json();
 
     createDropdownMenu(queryResult.items); 
   }
-  
-
-}
-
-function createDropdownMenu(data) {  // Создание выпадающего меню
-  if(dropdownMenu.querySelector("p")) {
-    let p = dropdownMenu.querySelectorAll("p");
-    for(let item of p) {
-      item.remove()
-    }
-  }
-
-  data.forEach((item)=> {
-    const p = document.createElement("p");
-    p.classList.add("dropdownMenu_name");
-    p.innerHTML = item.name[0].toUpperCase() + item.name.slice(1);
-    dropdownMenu.append(p);
-  })
-  dropdownMenu.style.display = "block";
-}
-
-function HidingDropdownMenu () {   //Скрытие выпадающего меню
-  let p = dropdownMenu.querySelectorAll("p");
-    for(let item of p) {
-      item.remove();
-    }
 }
 
 dropdownMenu.addEventListener("click", (event) => {  // Ловим клик на элементе выпадающего меню
-  valueClick = event.target.textContent;
+  let valueClick = event.target.textContent;
 
   if(event.target.classList.contains("dropdownMenu_name")) {
-
-  inputSearch.value = valueClick;
-
-  HidingDropdownMenu ();
-
-  addRepositories(queryResult.items[0]);  // создание информационного блока
-
-  inputSearch.value = null;
+    search.value = valueClick;
+    removeChildren(dropdownMenu, "p");
+    search.value = null;
+    addRepositories(queryResult.items[0]); 
   }
 })
 
 function addRepositories(data) {   // Добавляем информацию по запросу на страницу
-  if (informSearch.childNodes.length == 3) {
-    informSearch.lastChild.remove();
-  }
+  if (informationBlock.childNodes.length == 3)  informationBlock.lastChild.remove(); //удаление переполняющего блока
 
-  // создание информации по запросу
+  let information_request = addNode("div", "information_request", informationBlock);
+  informationBlock.prepend(information_request);
+  addNode("a", "close", information_request);
 
-    let divInformation = document.createElement("div");
-    divInformation.classList.add("information_request");
-
-    let btnClose = document.createElement("a");
-    btnClose.classList.add("close");
-    divInformation.append(btnClose);
-
-    let p1 = document.createElement("p");
-    p1.innerHTML = `Name: ${data.name}`;
-    divInformation.append(p1);
-
-    let p2 = document.createElement("p");
-    p2.innerHTML = `Owner: ${data.owner.type}`;
-    divInformation.append(p2); 
-   
-    let p3 = document.createElement("p");
-    p3.innerHTML = `Stars: ${data.stargazers_count}`;
-    divInformation.append(p3);
-  
-    informSearch.prepend(divInformation)
-
+  AddSearchResult("p", information_request, data.name, "Name");
+  AddSearchResult("p", information_request, data.owner.type, "Owner");
+  AddSearchResult("p", information_request, data.stargazers_count, "Stars");
 }
- 
-informSearch.addEventListener("click", (event) => {
-    if(event.target.classList.contains("close")) {
-      event.target.parentNode.remove();
-    }
+
+informationBlock.addEventListener("click", (event) => {
+    if(event.target.classList.contains("close")) event.target.parentNode.remove(); 
 })
+
