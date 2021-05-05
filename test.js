@@ -1,41 +1,37 @@
-function addNode(tag, className, Node, atributs, data) { //Функция добавление нового узла в html
+let search = document.querySelector(".search");
+let dropdownMenu = document.querySelector(".dropdownMenu");
+let informationBlock = document.querySelector(".information");
+let queryResult = new Object; // тут хранится результат запроса
+
+function addNode(tag, className, node, data) { //Функция добавление нового узла в html
   let element = document.createElement(tag); 
   element.classList.add(className);
-  Node.append(element);
+  node.append(element);
 
-  if(atributs) {
-    const [name, value]  = atributs;
-    element.setAttribute(name, value);
-  }
-
-  if(data) element.innerHTML = data.name[0].toUpperCase() + data.name.slice(1);
+  if(data) Array.isArray(data) ? element.innerHTML = `${data[0]}: ${data[1]}` : element.innerHTML = data.name[0].toUpperCase() + data.name.slice(1);
 
   return element;
 } 
 
-function removeChildren(element, selector) {  // Функция удаления всех дочерних элементов
+function removeChildElements(element, selector) {  // Функция удаления всех дочерних элементов
   let children = element.querySelectorAll(selector)
   for(let item of children) {
     item.remove();
   }
 }
 
-function AddSearchResult(selectorName, Node, propertyValue, propertyName) { // Функция добавление результата запроса
-  let element = document.createElement(selectorName);
-  element.innerHTML = `${propertyName}: ${propertyValue}`;
-  Node.append(element);
-}
+function createDropdownMenu(data) {  // Создание выпадающего меню и добавление слушателя событий
+  if(dropdownMenu.childNodes.length) removeChildElements(dropdownMenu, "p");
 
-let container = addNode("div", "container", document.body);
-let search = addNode("input", "search", container, ["type", "text"]);
-let dropdownMenu = addNode("div", "dropdownMenu", container);
-let informationBlock = addNode("div", "information", container);
-
-
-function createDropdownMenu(data) {  // Создание выпадающего меню
-  if(dropdownMenu.childNodes.length) removeChildren(dropdownMenu, "p");
-
-  data.forEach((item)=> addNode("p", "dropdownMenu_name", dropdownMenu, undefined, item)) // создание выпадающего меню при вводе запроса
+  data.forEach((item)=> {
+   let p = addNode("p", "dropdownMenu_name", dropdownMenu, item);
+    p.addEventListener("click" , (event) => {
+      search.value = event.target.textContent;
+      removeChildElements(dropdownMenu, "p");
+      search.value = null;
+      addRepositories(item);
+    })
+  })
 }
 
 const debounce = (fn) => { // Просто debaunce 
@@ -49,9 +45,7 @@ const debounce = (fn) => { // Просто debaunce
   }
 };
 
-search.addEventListener("keyup", debounce(onChange));
-
-let queryResult = new Object; // хранение результата запроса
+search.addEventListener("keypress", debounce(onChange));
 
 async function onChange(event) {  // GET запрос
   let value = event.target.value.trim();
@@ -64,30 +58,20 @@ async function onChange(event) {  // GET запрос
   }
 }
 
-dropdownMenu.addEventListener("click", (event) => {  // Ловим клик на элементе выпадающего меню
-  let valueClick = event.target.textContent;
-
-  if(event.target.classList.contains("dropdownMenu_name")) {
-    search.value = valueClick;
-    removeChildren(dropdownMenu, "p");
-    search.value = null;
-    addRepositories(queryResult.items[0]); 
-  }
-})
-
 function addRepositories(data) {   // Добавляем информацию по запросу на страницу
   if (informationBlock.childNodes.length == 3)  informationBlock.lastChild.remove(); //удаление переполняющего блока
 
   let information_request = addNode("div", "information_request", informationBlock);
   informationBlock.prepend(information_request);
-  addNode("a", "close", information_request);
 
-  AddSearchResult("p", information_request, data.name, "Name");
-  AddSearchResult("p", information_request, data.owner.type, "Owner");
-  AddSearchResult("p", information_request, data.stargazers_count, "Stars");
+  let close = addNode("a", "close", information_request, false);
+
+  close.addEventListener("click", (event) => {
+     event.target.parentNode.remove(); 
+  })
+
+  addNode("p", "name", information_request, ["Name", data.name]);
+  addNode("p", "owner", information_request, ["Owner", data.owner.type]);
+  addNode("p", "stars", information_request, ["Stars", data.stargazers_count]);
 }
-
-informationBlock.addEventListener("click", (event) => {
-    if(event.target.classList.contains("close")) event.target.parentNode.remove(); 
-})
 
