@@ -45,10 +45,12 @@ const debounce = (fn) => { // Просто debaunce
   }
 };
 
-search.addEventListener("keypress", debounce(onChange));
+search.addEventListener("input", debounce(onChange));
 
 async function onChange(event) {  // GET запрос
   let value = event.target.value.trim();
+ 
+  if(value == "") removeChildElements(dropdownMenu, "p");
 
   if (!value == '') {
     let data = await fetch(`https://api.github.com/search/repositories?q=${value}in:name&per_page=5&sort=stars`);
